@@ -1,5 +1,7 @@
 module ContextFreeGrammars
 
+include("semirings.jl")
+
 export AbstractSemiring, AbstractSemiringElement
 export BooleanSemiring, BooleanElement
 export ProbabilisticSemiring, ProbabilisticElement
