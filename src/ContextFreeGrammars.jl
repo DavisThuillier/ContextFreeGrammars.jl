@@ -106,5 +106,21 @@ function tag_symbol(sym, V::Set{N}, Σ::Set{T}) where {N, T}
         throw(ArgumentError("symbol $(repr(sym)) appears in a rule, but is neither a terminal nor nonterminal symbol"))
     end
 end
-    
+
+###
+### Pretty Printing
+###
+
+function Base.show(io::IO, rule::Rule)
+    print(io, rule.lhs, " ⇒ ")
+    join(io, (sym.val for sym in rule.rhs), " ")
+end
+
+function Base.show(io::IO, rules::AbstractVector{<:Rule})
+    for rule in rules
+        println(io)
+        show(io, rule)
+    end
+end
+
 end # ContextFreeGrammars
