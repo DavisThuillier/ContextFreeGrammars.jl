@@ -53,7 +53,7 @@ end
 
 abstract type AbstractGrammar end
 
-struct ContextFreeGrammar{N, T, E}
+struct ContextFreeGrammar{N, T, E} <:AbstractGrammar
     nonterminals::Set{N}
     terminals::Set{T}
     rules::Vector{Rule{N,T,E}}
@@ -61,7 +61,7 @@ struct ContextFreeGrammar{N, T, E}
 end
 
 terminals(G::AbstractGrammar) = G.terminals
-nonterminal(G::AbstractGrammar) = G.nonterminals 
+nonterminals(G::AbstractGrammar) = G.nonterminals 
 rules(G::AbstractGrammar) = G.rules
 start(G::AbstractGrammar) = G.start
 
@@ -122,5 +122,7 @@ function Base.show(io::IO, rules::AbstractVector{<:Rule})
         show(io, rule)
     end
 end
+
+include("cnf.jl")
 
 end # ContextFreeGrammars
