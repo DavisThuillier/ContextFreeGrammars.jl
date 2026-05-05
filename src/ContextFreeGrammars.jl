@@ -23,6 +23,18 @@ struct Rule{N, T, E <: AbstractSemiringElement}
     lhs::N
     rhs::Vector{Union{TerminalSymbol{T}, NonterminalSymbol{N}}}
     weight::E
+
+    Rule{N,T,E}(lhs, rhs::AbstractVector, weight) where {N, T, E <: AbstractSemiringElement} =
+        new{N,T,E}(lhs, rhs, weight)
+end
+
+Rule(lhs::N, rhs::Vector{Union{TerminalSymbol{T}, NonterminalSymbol{N}}}, weight::E) where {N, T, E <: AbstractSemiringElement} =
+    Rule{N,T,E}(lhs, rhs, weight)
+
+function compose(a::Rule{N,T,E}, b::Rule{N,T,E}) where {N,T,E}
+    (length(a.rhs) == 1 && a.rhs[1] == b.lhs) || throw(ArgumentError("$(a.lhs) ⇒ $(a.rhs) is not comopsable with $(b.lhs) ⇒ $(b.rhs)"))
+
+    return Rule(a.lhs, b.rhs, a.weight * b.weight)
 end
 
 abstract type AbstractGrammar end
