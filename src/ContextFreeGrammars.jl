@@ -1,5 +1,13 @@
 module ContextFreeGrammars
 
+export AbstractSemiring, AbstractSemiringElement
+export BooleanSemiring, BooleanElement
+export ProbabilisticSemiring, ProbabilisticElement
+
+export AbstractGrammar
+export ContextFreeGrammar
+export terminals, nonterminals, rules, start
+
 abstract type AbstractSemiring end
 abstract type AbstractSemiringElement end
 
