@@ -16,9 +16,11 @@ Base.:+(a::BooleanElement, b::BooleanElement) = BooleanElement(a.val || b.val)
 Base.:*(a::BooleanElement, b::BooleanElement) = BooleanElement(a.val && b.val)
 Base.zero(::Type{BooleanElement}) = BooleanElement(false)
 Base.one(::Type{BooleanElement})  = BooleanElement(true) 
+star(::BooleanElement) = BooleanElement(true)
 
 struct ProbabilisticSemiring <: AbstractSemiring end
-struct ProbabilisticElement <: AbstractSemiringElement; val::Bool; end
+struct ProbabilisticElement <: AbstractSemiringElement; val::Float64; end
+star(a::ProbabilisticElement) = ProbabilisticElement(1 / (1 - a.val))
 
 element_type(::ProbabilisticSemiring) = ProbabilisticElement
 Base.:+(a::ProbabilisticElement, b::ProbabilisticElement) = ProbabilisticElement(a.val + b.val)
