@@ -4,6 +4,8 @@ abstract type AbstractSemiringElement end
 lift(x, ::Type{E}) where {E<:AbstractSemiringElement} = E(x) # Promotes a value to the corresponding element type
 lift(x::E, ::Type{E}) where {E<:AbstractSemiringElement} = x # Idempotent protection for weights
 
+val(x::E) where {E<:AbstractSemiringElement} = x.val
+
 ###
 ### Standard Semiring Definitions
 ###
