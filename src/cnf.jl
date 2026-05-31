@@ -14,32 +14,21 @@ function chomsky_normal_form(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:Abstr
     S′ = start(cfg)
     
     R′ = remove_unit_productions(rules(cfg)) # Remove unit production without mutation
-    R′, V′ = replace_long_productions(R′, nonterminals(V′)) # Split A → X₁…Xₙ into A → X₁A₁, A₁ → X₂A₂, etc.
-    R′, V′ = replace_terminals_in_binaries(R′, V′)
-
-    # for rule ∈ R
-    #     in_chomsky_normal_form(rule) && push!(R′, rule)
-    # end
+    
     return ChomskyNormalFormContextFreeGrammar(V′, Σ′, R′, S′)
 end
 
-function is_unit_production(rule::Rule)
-    return length(rule.rhs) == 1 && isa(rule.rhs, NonterminalSymbol)
+function remove_unit_productions(rules::AbstractVector{Rule})
+    
 end
 
-#FIXME: Implement algorithm to remove unit productions
-function remove_unit_productions(rules::Vector{Rule})
-    return rules 
-end
+function derives(A::NonterminalSymbol{T}, B::NonterminalSymbol{T}, cfg::AbstractGrammar) where {T}
+    A ∈ nonterminals(cfg) && B ∈ nonterminals(cfg) || throw(ArgumentError("$A and $B must both be nonterminals of $cfg"))
 
-#FIXME: Implement algorithm to replace long productions
-function replace_long_productions(rules::Vector{Rule}, nonterminals::Set{N}) where {N}
-    return rules, nonterminals
-end
-
-#FIXME: Implement algorithm to remove unit productions
-function replace_long_productions(rules::Vector{Rule}, nonterminals::Set{N}) where {N}
-    return rules, nonterminals
+    productions = rules(cfg)
+    unit_productions = productions[is_unit_production.(productions)]
+    
+    
 end
 
 function in_chomsky_normal_form(rule::Rule)
