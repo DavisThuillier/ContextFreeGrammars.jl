@@ -19,6 +19,7 @@ abstract type AbstractGrammarSymbol end
 struct TerminalSymbol{T} <: AbstractGrammarSymbol; val::T; end 
 struct NonterminalSymbol{N} <: AbstractGrammarSymbol; val::N; end 
 
+
 struct Rule{N, T, E <: AbstractSemiringElement}
     lhs::N
     rhs::Vector{Union{TerminalSymbol{T}, NonterminalSymbol{N}}}
@@ -32,7 +33,7 @@ Rule(lhs::N, rhs::Vector{Union{TerminalSymbol{T}, NonterminalSymbol{N}}}, weight
     Rule{N,T,E}(lhs, rhs, weight)
 
 function compose(a::Rule{N,T,E}, b::Rule{N,T,E}) where {N,T,E}
-    (length(a.rhs) == 1 && a.rhs[1] == b.lhs) || throw(ArgumentError("$(a.lhs) ⇒ $(a.rhs) is not comopsable with $(b.lhs) ⇒ $(b.rhs)"))
+    (length(a.rhs) == 1 && a.rhs[1].val == b.lhs) || throw(ArgumentError("$(a.lhs) ⇒ $(a.rhs) is not composable with $(b.lhs) ⇒ $(b.rhs)"))
 
     return Rule(a.lhs, b.rhs, a.weight * b.weight)
 end
@@ -50,6 +51,10 @@ terminals(G::AbstractGrammar) = G.terminals
 nonterminals(G::AbstractGrammar) = G.nonterminals 
 rules(G::AbstractGrammar) = G.rules
 start(G::AbstractGrammar) = G.start
+
+function is_unit_production(rule::Rule)
+    return length(rule.rhs) == 1 && isa(rule.rhs[1], NonterminalSymbol)
+end
 
 function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::AbstractVector{T}, rules, start::N; semiring::AbstractSemiring = BooleanSemiring()) where {N, T}
     V = Set(nonterminals)
