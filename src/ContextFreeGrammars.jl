@@ -1,7 +1,5 @@
 module ContextFreeGrammars
 
-import LinearAlgebra: checksquare
-
 include("semirings.jl")
 
 export AbstractSemiring, AbstractSemiringElement
@@ -64,7 +62,7 @@ function is_unit_production(production::Production)
 end
 
 function is_terminal_production(production::Production)
-    return (length(rhs(production)) == 1) && isa(first(rhs(production)), TerminalSymbol)
+    return all(isa.(rhs(production), TerminalSymbol))
 end
 
 function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::AbstractVector{T}, productions, start::N; semiring::AbstractSemiring = BooleanSemiring()) where {N, T}
@@ -127,7 +125,7 @@ function adjacency_matrix(productions::AbstractVector{Production{N, T, E}}) wher
 end
 
 function adjacency_closure!(A::Matrix{E}) where E
-    n = checksquare(A)
+    n = size(A)[1]
 
     # Perform A_ij ⟵ A_ij ⊕ (A_ik ⊗ star(A_kk) ⊗ A_kj)
     for k ∈ 1:n
@@ -153,6 +151,47 @@ function unit_production_closure(P::AbstractVector{Production{N, T, E}}) where {
     A, symbols = adjacency_matrix(P)
     adjacency_closure!(A)
     return A, symbols
+end
+
+function generating_symbols(cfg::AbstractGrammar)
+    Σ = copy(terminals(cfg))
+    R = productions(cfg)
+
+    old_generating = Set{eltype(Σ)}()
+    new_generating = Set(lhs.(filter(r -> val.(rhs(r)) ⊆ Σ, R)))
+    while old_generating != new_generating
+        old_generating = new_generating
+        Σ = Σ ∪ old_generating
+        new_generating = old_generating ∪ Set(lhs.(filter(r -> val.(rhs(r)) ⊆ Σ, R)))
+    end
+    return new_generating
+end
+
+function reachable_symbols(cfg::AbstractGrammar)
+    S = start(cfg)
+    old_reachable = Set{eltype(S)}()
+    new_reachable = Set([S])
+    R = productions(cfg)
+
+    while old_reachable != new_reachable
+        old_reachable = new_reachable
+        for r ∈ R
+            if lhs(r) ∈ old_reachable
+                new_reachable = new_reachable ∪ val.(rhs(r))
+            end
+        end
+    end
+
+    return new_reachable
+end
+
+function remove_useless_symbols(cfg::AbstractGrammar)
+    generating = generating_symbols(cfg)
+    R′ = filter(r -> lhs(r) ∈ generating, productions(cfg))
+    reachable = reachable_symbols(ContextFreeGrammar(generating, terminals(cfg), R′, start(cfg)))
+    R′ = filter(r -> lhs(r) ∈ reachable, R′)
+
+    return ContextFreeGrammar(generating, terminals(cfg), R′, start(cfg))
 end
 
 ###
