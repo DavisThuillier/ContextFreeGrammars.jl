@@ -6,6 +6,8 @@ lift(x::E, ::Type{E}) where {E<:AbstractSemiringElement} = x # Idempotent protec
 
 val(x::E) where {E<:AbstractSemiringElement} = x.val
 
+semiring(x::AbstractSemiringElement) = semiring(typeof(x)) # The semiring type a weight belongs to
+
 ###
 ### Standard Semiring Definitions
 ###
@@ -19,6 +21,7 @@ Base.:*(a::BooleanElement, b::BooleanElement) = BooleanElement(a.val && b.val)
 Base.zero(::Type{BooleanElement}) = BooleanElement(false)
 Base.one(::Type{BooleanElement})  = BooleanElement(true) 
 star(::BooleanElement) = BooleanElement(true)
+semiring(::Type{BooleanElement}) = BooleanSemiring
 
 struct ProbabilisticSemiring <: AbstractSemiring end
 struct ProbabilisticElement <: AbstractSemiringElement; val::Float64; end
@@ -28,4 +31,5 @@ element_type(::ProbabilisticSemiring) = ProbabilisticElement
 Base.:+(a::ProbabilisticElement, b::ProbabilisticElement) = ProbabilisticElement(a.val + b.val)
 Base.:*(a::ProbabilisticElement, b::ProbabilisticElement) = ProbabilisticElement(a.val * b.val)
 Base.zero(::Type{ProbabilisticElement}) = ProbabilisticElement(0.0)
-Base.one(::Type{ProbabilisticElement})  = ProbabilisticElement(1.0) 
+Base.one(::Type{ProbabilisticElement})  = ProbabilisticElement(1.0)
+semiring(::Type{ProbabilisticElement}) = ProbabilisticSemiring

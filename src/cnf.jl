@@ -1,4 +1,4 @@
-struct ChomskyNormalFormContextFreeGrammar{N,T,E<:AbstractSemiringElement} <: AbstractGrammar
+struct ChomskyNormalFormContextFreeGrammar{N,T,E<:AbstractSemiringElement} <: AbstractGrammar{N,T,E}
     nonterminals::Set{N}
     terminals::Set{T}
     productions::Vector{Production{N,T,E}}

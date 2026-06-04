@@ -43,9 +43,9 @@ function compose(a::Production{N,T,E}, b::Production{N,T,E}) where {N,T,E}
     return Production(a.lhs, b.rhs, a.weight * b.weight)
 end
 
-abstract type AbstractGrammar end
+abstract type AbstractGrammar{N, T, E} end
 
-struct ContextFreeGrammar{N, T, E} <:AbstractGrammar
+struct ContextFreeGrammar{N, T, E} <: AbstractGrammar{N, T, E}
     nonterminals::Set{N}
     terminals::Set{T}
     productions::Vector{Production{N,T,E}}
@@ -56,6 +56,7 @@ terminals(G::AbstractGrammar) = G.terminals
 nonterminals(G::AbstractGrammar) = G.nonterminals
 productions(G::AbstractGrammar) = G.productions
 start(G::AbstractGrammar) = G.start
+semiring(::AbstractGrammar{N,T,E}) where {N,T,E} = semiring(E)
 
 function is_unit_production(production::Production)
     return (length(rhs(production)) == 1) && isa(first(rhs(production)), NonterminalSymbol)
