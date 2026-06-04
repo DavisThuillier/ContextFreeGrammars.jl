@@ -65,7 +65,7 @@ function is_terminal_production(production::Production)
     return all(isa.(rhs(production), TerminalSymbol))
 end
 
-function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::AbstractVector{T}, productions, start::N; semiring::AbstractSemiring = BooleanSemiring()) where {N, T}
+function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::AbstractVector{T}, productions::AbstractVector, start::N; semiring::AbstractSemiring = BooleanSemiring()) where {N, T}
     V = Set(nonterminals)
     Σ = Set(terminals)
 
@@ -170,7 +170,7 @@ end
 function reachable_symbols(cfg::AbstractGrammar)
     S = start(cfg)
     old_reachable = Set{eltype(S)}()
-    new_reachable = Set([S])
+    new_reachable = Set{eltype(S)}([S])
     R = productions(cfg)
 
     while old_reachable != new_reachable
@@ -191,7 +191,10 @@ function remove_useless_symbols(cfg::AbstractGrammar)
     reachable = reachable_symbols(ContextFreeGrammar(generating, terminals(cfg), R′, start(cfg)))
     R′ = filter(r -> lhs(r) ∈ reachable, R′)
 
-    return ContextFreeGrammar(generating, terminals(cfg), R′, start(cfg))
+    V′ = Set(lhs.(R′))
+    Σ′ = filter(t -> t ∈ reachable, terminals(cfg)) # Intersection that preserves type
+
+    return ContextFreeGrammar(V′, Σ′, R′, start(cfg))
 end
 
 ###
