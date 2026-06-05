@@ -166,5 +166,5 @@ function in_chomsky_normal_form(production::Production)
 end
 
 function in_chomsky_normal_form(cfg::AbstractGrammar)
-    return all(in_chomsky_normal_form.(productions(cfg)))
+    return isa(cfg, ChomskyNormalFormContextFreeGrammar) || all(in_chomsky_normal_form.(productions(cfg)))
 end
