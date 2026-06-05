@@ -80,7 +80,7 @@ function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::Abstract
 end
 
 function construct_production(production::Tuple{N, AbstractVector}, V::Set{N}, Σ::Set{T}, semiring::AbstractSemiring) where {N, T}
-    E = element_type(semiring)
+    E = element_type(typeof(semiring))
     E === BooleanElement || throw(ArgumentError("semiring of element type $E requires explicit weights; production $production has none"))
 
     return construct_production((production..., one(BooleanElement)), V, Σ, semiring)
@@ -88,7 +88,7 @@ end
 
 function construct_production(production::Tuple{N, AbstractVector, Any}, V::Set{N}, Σ::Set{T}, semiring::AbstractSemiring) where {N, T}
     lhs, rhs, weight = production
-    E = element_type(semiring)
+    E = element_type(typeof(semiring))
     return construct_production(lhs, rhs, lift(weight, E), V, Σ)
 end
 
@@ -215,5 +215,6 @@ function Base.show(io::IO, productions::AbstractVector{<:Production})
 end
 
 include("cnf.jl")
+include("parsers.jl")
 
 end # ContextFreeGrammars
