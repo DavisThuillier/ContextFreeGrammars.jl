@@ -15,7 +15,7 @@ semiring(x::AbstractSemiringElement) = semiring(typeof(x)) # The semiring type a
 struct BooleanSemiring <: AbstractSemiring end
 struct BooleanElement <: AbstractSemiringElement; val::Bool; end
 
-element_type(::BooleanSemiring) = BooleanElement
+element_type(::Type{BooleanSemiring}) = BooleanElement
 Base.:+(a::BooleanElement, b::BooleanElement) = BooleanElement(a.val || b.val)
 Base.:*(a::BooleanElement, b::BooleanElement) = BooleanElement(a.val && b.val)
 Base.zero(::Type{BooleanElement}) = BooleanElement(false)
@@ -27,7 +27,7 @@ struct ProbabilisticSemiring <: AbstractSemiring end
 struct ProbabilisticElement <: AbstractSemiringElement; val::Float64; end
 star(a::ProbabilisticElement) = ProbabilisticElement(1 / (1 - a.val))
 
-element_type(::ProbabilisticSemiring) = ProbabilisticElement
+element_type(::Type{ProbabilisticSemiring}) = ProbabilisticElement
 Base.:+(a::ProbabilisticElement, b::ProbabilisticElement) = ProbabilisticElement(a.val + b.val)
 Base.:*(a::ProbabilisticElement, b::ProbabilisticElement) = ProbabilisticElement(a.val * b.val)
 Base.zero(::Type{ProbabilisticElement}) = ProbabilisticElement(0.0)
