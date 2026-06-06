@@ -66,6 +66,20 @@ function is_terminal_production(production::Production)
     return all(isa.(rhs(production), TerminalSymbol))
 end
 
+function ContextFreeGrammar(productions::AbstractVector, start; semiring::AbstractSemiring = BooleanSemiring)
+    N = typeof(start)
+    nonterminals = N[]
+    terminals = []
+    for p ∈ productions
+        symbols = [p[1]] ∪ p[2]
+        nonterminals = nonterminals ∪ filter(s -> isa(s, N), symbols)
+        terminals = terminals ∪ filter(s -> !isa(s, N), symbols)
+    end
+    T = typeof(first(terminals))
+    all(s -> isa(s, T), terminals) || throw(ArgumentError("terminal symbols must all be of same type"))
+    return ContextFreeGrammar(Vector{N}(nonterminals), Vector{T}(terminals), productions, start; semiring)
+end
+
 function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::AbstractVector{T}, productions::AbstractVector, start::N; semiring::AbstractSemiring = BooleanSemiring()) where {N, T}
     V = Set(nonterminals)
     Σ = Set(terminals)
@@ -215,6 +229,6 @@ function Base.show(io::IO, productions::AbstractVector{<:Production})
 end
 
 include("cnf.jl")
-include("parsers.jl")
+include("cyk.jl")
 
 end # ContextFreeGrammars
