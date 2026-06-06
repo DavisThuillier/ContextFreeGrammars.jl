@@ -33,3 +33,18 @@ Base.:*(a::ProbabilisticElement, b::ProbabilisticElement) = ProbabilisticElement
 Base.zero(::Type{ProbabilisticElement}) = ProbabilisticElement(0.0)
 Base.one(::Type{ProbabilisticElement})  = ProbabilisticElement(1.0)
 semiring(::Type{ProbabilisticElement}) = ProbabilisticSemiring
+
+struct InfInt end
+const ∞ = InfInt()
+Base.show(io::IO, ::InfInt) = show(io, "∞")
+
+struct CountSemiring <: AbstractSemiring end
+struct CountElement <: AbstractSemiringElement; val::Union{Int,InfInt}; end
+star(a::CountElement) = iszero(a) ? one(typeof(a)) : CountElement(∞)
+
+element_type(::Type{CountSemiring}) = CountElement
+Base.:+(a::CountElement, b::CountElement) = CountElement(a.val + b.val)
+Base.:*(a::CountElement, b::ProbabilisticElement) = CountElement(a.val * b.val)
+Base.zero(::Type{CountElement}) = CountElement(0)
+Base.one(::Type{CountElement})  = CountElement(1)
+semiring(::Type{CountElement}) = CountSemiring
