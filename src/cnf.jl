@@ -3,35 +3,48 @@ struct ChomskyNormalFormContextFreeGrammar{N,T,E<:AbstractSemiringElement} <: Ab
     terminals::Set{T}
     productions::Vector{Production{N,T,E}}
     start::N
+
+    function ChomskyNormalFormContextFreeGrammar(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:AbstractSemiringElement}
+        R′ = remove_unit_productions(productions(cfg)) # Remove unit productions without mutation
+        g = ContextFreeGrammar(copy(nonterminals(cfg)), copy(terminals(cfg)), R′, start(cfg))
+
+        g = remove_useless_symbols(g) # Discard non-generating and unreachable symbols
+        g = abstract_terminals(g)     # Replace terminals in length-≥2 bodies with fresh nonterminals
+        g = binarize_productions(g)   # Split length-≥3 bodies into a chain of binary productions
+
+        return new{N,T,E}(nonterminals(g), terminals(g), productions(g), start(g))
+    end
 end
+
+ChomskyNormalFormContextFreeGrammar(productions::AbstractVector, start; semiring::AbstractSemiring = BooleanSemiring()) = ChomskyNormalFormContextFreeGrammar(ContextFreeGrammar(productions, start; semiring))
 
 # Conversion follows the procedure outline in
 # Hopcroft, J.E. and Ullman, J.D., "Introduction to Automata Theory,
 # Languages, and Computation," pp.92-94 Addison-Wesley, 1979.
 
-function chomsky_normal_form(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:AbstractSemiringElement}
-    R′ = remove_unit_productions(productions(cfg)) # Remove unit productions without mutation
-    g = ContextFreeGrammar(copy(nonterminals(cfg)), copy(terminals(cfg)), R′, start(cfg))
+# function ChomskyNormalForm(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:AbstractSemiringElement}
+#     R′ = remove_unit_productions(productions(cfg)) # Remove unit productions without mutation
+#     g = ContextFreeGrammar(copy(nonterminals(cfg)), copy(terminals(cfg)), R′, start(cfg))
 
-    g = remove_useless_symbols(g) # Discard non-generating and unreachable symbols
-    g = abstract_terminals(g)     # Replace terminals in length-≥2 bodies with fresh nonterminals
-    g = binarize_productions(g)   # Split length-≥3 bodies into a chain of binary productions
+#     g = remove_useless_symbols(g) # Discard non-generating and unreachable symbols
+#     g = abstract_terminals(g)     # Replace terminals in length-≥2 bodies with fresh nonterminals
+#     g = binarize_productions(g)   # Split length-≥3 bodies into a chain of binary productions
 
-    return ChomskyNormalFormContextFreeGrammar(nonterminals(g), terminals(g), productions(g), start(g))
-end
+#     return ChomskyNormalFormContextFreeGrammar(nonterminals(g), terminals(g), productions(g), start(g))
+# end
 
 function remove_unit_productions(productions::AbstractVector{Production{N,T,E}}) where {N,T,E<:AbstractSemiringElement}
     is_unit = is_unit_production.(productions)
-    is_terminal = is_terminal_production.(productions)
-    terminal_productions = productions[is_terminal]
+    nonunit_productions = productions[.!is_unit]
 
-    R′ = productions[.!is_unit]
+    R′ = copy(nonunit_productions)
     
     A, symbols = unit_production_closure(productions[is_unit])
 
     for i ∈ eachindex(symbols), j ∈ eachindex(symbols)
+        i == j && continue # A's own non-unit productions are already in R′
         if !(A[i,j] === Base.zero(E))
-            for production ∈ terminal_productions
+            for production ∈ nonunit_productions
                 if lhs(production) == symbols[j]
                     push!(R′, Production(
                             symbols[i], 
