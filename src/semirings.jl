@@ -6,6 +6,9 @@ lift(x::E, ::Type{E}) where {E<:AbstractSemiringElement} = x # Idempotent protec
 
 val(x::E) where {E<:AbstractSemiringElement} = x.val
 
+Base.zero(x::AbstractSemiringElement) = zero(typeof(x)) # Instance-level fallbacks to the type methods
+Base.one(x::AbstractSemiringElement)  = one(typeof(x))
+
 semiring(x::AbstractSemiringElement) = semiring(typeof(x)) # The semiring type a weight belongs to
 
 ###
@@ -44,7 +47,7 @@ star(a::CountElement) = iszero(a) ? one(typeof(a)) : CountElement(∞)
 
 element_type(::Type{CountSemiring}) = CountElement
 Base.:+(a::CountElement, b::CountElement) = CountElement(a.val + b.val)
-Base.:*(a::CountElement, b::ProbabilisticElement) = CountElement(a.val * b.val)
+Base.:*(a::CountElement, b::CountElement) = CountElement(a.val * b.val)
 Base.zero(::Type{CountElement}) = CountElement(0)
 Base.one(::Type{CountElement})  = CountElement(1)
 semiring(::Type{CountElement}) = CountSemiring
