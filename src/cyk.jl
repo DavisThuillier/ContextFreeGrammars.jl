@@ -122,7 +122,13 @@ function val(chart::AbstractParseChart{N,T,E}) where {N, T, E}
     return inside(0, length(input(chart)), start_index(chart), chart)
 end
 
-function val(input::AbstractVector{T}, grammar::AbstractGrammar{N, T, E}; algorithm = cyk) where {N, T, E}
-    chart = algorithm(input, grammar)
-    return inside(0, length(input(chart)), start_index(chart))
+function val(input::AbstractVector{T}, grammar::AbstractGrammar{N, T, E}) where {N, T, E}
+    chart = cyk(input, grammar)
+    return inside(0, length(input), start_index(chart), chart)
+end
+
+function val(input::String, grammar::AbstractGrammar{N, T, E}; dlm = " ") where {N, T, E}
+    words = String.(split(input, dlm))
+    chart = cyk(words, grammar)
+    return inside(0, length(words), start_index(chart), chart)
 end
