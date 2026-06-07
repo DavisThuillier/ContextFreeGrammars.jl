@@ -4,8 +4,19 @@
 
 abstract type AbstractGrammarSymbol end
 
+# Internal tagging scheme
 struct TerminalSymbol{T} <: AbstractGrammarSymbol; val::T; end
 struct NonterminalSymbol{N} <: AbstractGrammarSymbol; val::N; end
+
+function tag_symbol(sym, V::Set{N}, Σ::Set{T}) where {N, T}
+    if sym in Σ
+        return TerminalSymbol{T}(sym)
+    elseif sym in V
+        return NonterminalSymbol{N}(sym)
+    else
+        throw(ArgumentError("symbol $(repr(sym)) appears in a production, but is neither a terminal nor nonterminal symbol"))
+    end
+end
 
 val(S::AbstractGrammarSymbol) = S.val
 
@@ -18,7 +29,7 @@ struct Production{N, T, E <: AbstractSemiringElement}
     rhs::Vector{Union{TerminalSymbol{T}, NonterminalSymbol{N}}}
     weight::E
 
-    Production{N,T,E}(lhs, rhs::AbstractVector, weight) where {N, T, E <: AbstractSemiringElement} =
+    Production{N,T,E}(lhs, rhs::AbstractVector, weight) where {N,T,E} =
         new{N,T,E}(lhs, rhs, weight)
 end
 
@@ -35,6 +46,33 @@ function compose(a::Production{N,T,E}, b::Production{N,T,E}) where {N,T,E}
     return Production(a.lhs, b.rhs, a.weight * b.weight)
 end
 
+function is_unit_production(production::Production)
+    return (length(rhs(production)) == 1) && isa(first(rhs(production)), NonterminalSymbol)
+end
+
+function is_terminal_production(production::Production)
+    return all(isa.(rhs(production), TerminalSymbol))
+end
+
+function construct_production(production::Tuple{N, AbstractVector}, V::Set{N}, Σ::Set{T}, semiring::AbstractSemiring) where {N, T}
+    E = element_type(typeof(semiring))
+    E === BooleanElement || throw(ArgumentError("semiring of element type $E requires explicit weights; production $production has none"))
+
+    return construct_production((production..., one(BooleanElement)), V, Σ, semiring)
+end
+
+function construct_production(production::Tuple{N, AbstractVector, Any}, V::Set{N}, Σ::Set{T}, semiring::AbstractSemiring) where {N, T}
+    lhs, rhs, weight = production
+    E = element_type(typeof(semiring))
+    return construct_production(lhs, rhs, lift(weight, E), V, Σ)
+end
+
+function construct_production(lhs::N, rhs::AbstractVector, weight::E, V::Set{N}, Σ::Set{T}) where {N, T, E <: AbstractSemiringElement}
+    lhs ∈ V || throw(ArgumentError("$lhs is not a nonterminal symbol"))
+    tagged_rhs = Union{TerminalSymbol{T}, NonterminalSymbol{N}}[tag_symbol(x, V, Σ) for x in rhs]
+    return Production{N, T, E}(lhs, tagged_rhs, weight)
+end
+
 ###
 ### Grammars
 ###
@@ -46,21 +84,6 @@ struct ContextFreeGrammar{N, T, E} <: AbstractGrammar{N, T, E}
     terminals::Set{T}
     productions::Vector{Production{N,T,E}}
     start::N
-end
-
-# Convenience accessors
-terminals(G::AbstractGrammar) = G.terminals
-nonterminals(G::AbstractGrammar) = G.nonterminals
-productions(G::AbstractGrammar) = G.productions
-start(G::AbstractGrammar) = G.start
-semiring(::AbstractGrammar{N,T,E}) where {N,T,E} = semiring(E)
-
-function is_unit_production(production::Production)
-    return (length(rhs(production)) == 1) && isa(first(rhs(production)), NonterminalSymbol)
-end
-
-function is_terminal_production(production::Production)
-    return all(isa.(rhs(production), TerminalSymbol))
 end
 
 function ContextFreeGrammar(productions::AbstractVector, start; semiring::AbstractSemiring = BooleanSemiring())
@@ -90,34 +113,16 @@ function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::Abstract
     return ContextFreeGrammar(V, Σ, R, start)
 end
 
-function construct_production(production::Tuple{N, AbstractVector}, V::Set{N}, Σ::Set{T}, semiring::AbstractSemiring) where {N, T}
-    E = element_type(typeof(semiring))
-    E === BooleanElement || throw(ArgumentError("semiring of element type $E requires explicit weights; production $production has none"))
+# Convenience accessors
+terminals(G::AbstractGrammar) = G.terminals
+nonterminals(G::AbstractGrammar) = G.nonterminals
+productions(G::AbstractGrammar) = G.productions
+start(G::AbstractGrammar) = G.start
+semiring(::AbstractGrammar{N,T,E}) where {N,T,E} = semiring(E)
 
-    return construct_production((production..., one(BooleanElement)), V, Σ, semiring)
-end
-
-function construct_production(production::Tuple{N, AbstractVector, Any}, V::Set{N}, Σ::Set{T}, semiring::AbstractSemiring) where {N, T}
-    lhs, rhs, weight = production
-    E = element_type(typeof(semiring))
-    return construct_production(lhs, rhs, lift(weight, E), V, Σ)
-end
-
-function construct_production(lhs::N, rhs::AbstractVector, weight::E, V::Set{N}, Σ::Set{T}) where {N, T, E <: AbstractSemiringElement}
-    lhs ∈ V || throw(ArgumentError("$lhs is not a nonterminal symbol"))
-    tagged_rhs = Union{TerminalSymbol{T}, NonterminalSymbol{N}}[tag_symbol(x, V, Σ) for x in rhs]
-    return Production{N, T, E}(lhs, tagged_rhs, weight)
-end
-
-function tag_symbol(sym, V::Set{N}, Σ::Set{T}) where {N, T}
-    if sym in Σ
-        return TerminalSymbol{T}(sym)
-    elseif sym in V
-        return NonterminalSymbol{N}(sym)
-    else
-        throw(ArgumentError("symbol $(repr(sym)) appears in a production, but is neither a terminal nor nonterminal symbol"))
-    end
-end
+###
+### CFG Manipulations
+###
 
 function adjacency_matrix(productions::AbstractVector{Production{N, T, E}}) where {N, T, E}
     all(is_unit_production.(productions)) || throw(ArgumentError("P may only contain unit productions"))

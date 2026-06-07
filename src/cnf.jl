@@ -5,12 +5,12 @@ struct ChomskyNormalFormContextFreeGrammar{N,T,E<:AbstractSemiringElement} <: Ab
     start::N
 
     function ChomskyNormalFormContextFreeGrammar(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:AbstractSemiringElement}
-        R′ = remove_unit_productions(productions(cfg)) # Remove unit productions without mutation
+        R′ = remove_unit_productions(productions(cfg)) 
         g = ContextFreeGrammar(copy(nonterminals(cfg)), copy(terminals(cfg)), R′, start(cfg))
 
-        g = remove_useless_symbols(g) # Discard non-generating and unreachable symbols
-        g = abstract_terminals(g)     # Replace terminals in length-≥2 bodies with fresh nonterminals
-        g = binarize_productions(g)   # Split length-≥3 bodies into a chain of binary productions
+        g = remove_useless_symbols(g) 
+        g = abstract_terminals(g)     
+        g = binarize_productions(g)
 
         return new{N,T,E}(nonterminals(g), terminals(g), productions(g), start(g))
     end
@@ -21,17 +21,6 @@ ChomskyNormalFormContextFreeGrammar(productions::AbstractVector, start; semiring
 # Conversion follows the procedure outline in
 # Hopcroft, J.E. and Ullman, J.D., "Introduction to Automata Theory,
 # Languages, and Computation," pp.92-94 Addison-Wesley, 1979.
-
-# function ChomskyNormalForm(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:AbstractSemiringElement}
-#     R′ = remove_unit_productions(productions(cfg)) # Remove unit productions without mutation
-#     g = ContextFreeGrammar(copy(nonterminals(cfg)), copy(terminals(cfg)), R′, start(cfg))
-
-#     g = remove_useless_symbols(g) # Discard non-generating and unreachable symbols
-#     g = abstract_terminals(g)     # Replace terminals in length-≥2 bodies with fresh nonterminals
-#     g = binarize_productions(g)   # Split length-≥3 bodies into a chain of binary productions
-
-#     return ChomskyNormalFormContextFreeGrammar(nonterminals(g), terminals(g), productions(g), start(g))
-# end
 
 function remove_unit_productions(productions::AbstractVector{Production{N,T,E}}) where {N,T,E<:AbstractSemiringElement}
     is_unit = is_unit_production.(productions)
@@ -166,10 +155,6 @@ function binarize_productions(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:Abst
 
     return ContextFreeGrammar(V, copy(Σ), R′, start(cfg))
 end
-
-###
-### Chomsky Normal Form Predicate
-###
 
 function in_chomsky_normal_form(production::Production)
     rhs = production.rhs
