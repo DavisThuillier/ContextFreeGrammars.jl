@@ -1,8 +1,7 @@
 using ContextFreeGrammars
 using Test
 
-using ContextFreeGrammars: chomsky_normal_form, in_chomsky_normal_form,
-    abstract_terminals, binarize_productions, fresh_nonterminal, lhs, rhs, weight
+using ContextFreeGrammars: abstract_terminals, binarize_productions, fresh_nonterminal
 
 @testset "ContextFreeGrammars.jl" begin
     @testset "Conversion reaches Chomsky normal form" begin
@@ -16,7 +15,7 @@ using ContextFreeGrammars: chomsky_normal_form, in_chomsky_normal_form,
             (:B, ["b"]),
             (:C, ["c"]),
         ]
-        cnf = chomsky_normal_form(ContextFreeGrammar(V, Σ, R, :S))
+        cnf = ChomskyNormalFormContextFreeGrammar(ContextFreeGrammar(V, Σ, R, :S))
 
         @test in_chomsky_normal_form(cnf)
         @test all(p -> length(rhs(p)) ≤ 2, productions(cnf))
@@ -47,7 +46,7 @@ using ContextFreeGrammars: chomsky_normal_form, in_chomsky_normal_form,
             (:B, ["b"], 1.0),
             (:C, ["c"], 1.0),
         ]
-        cnf = chomsky_normal_form(
+        cnf = ChomskyNormalFormContextFreeGrammar(
             ContextFreeGrammar(V, Σ, R, :S; semiring = ProbabilisticSemiring()))
 
         @test in_chomsky_normal_form(cnf)
