@@ -24,6 +24,14 @@ val(S::AbstractGrammarSymbol) = S.val
 ### Productions
 ###
 
+"""
+    Production{N, T, E <: AbstractSemiringElement}
+
+A single weighted grammar rule ``A ⇒ α`` with weight of semiring element type
+`E`. The left-hand side `lhs` is a nonterminal of type `N`; the right-hand side
+`rhs` is a sequence of tagged symbols, each either a `TerminalSymbol{T}` or a
+`NonterminalSymbol{N}`.
+"""
 struct Production{N, T, E <: AbstractSemiringElement}
     lhs::N
     rhs::Vector{Union{TerminalSymbol{T}, NonterminalSymbol{N}}}
@@ -36,8 +44,27 @@ end
 Production(lhs::N, rhs::Vector{Union{TerminalSymbol{T}, NonterminalSymbol{N}}}, weight::E) where {N, T, E <: AbstractSemiringElement} =
     Production{N,T,E}(lhs, rhs, weight)
 
+"""
+    lhs(p::Production)
+
+Return the left-hand-side nonterminal of production `p`.
+"""
 lhs(p::Production) = p.lhs
+
+"""
+    rhs(p::Production)
+
+Return the right-hand side of production `p` as a vector of tagged symbols, each a
+`TerminalSymbol` or a `NonterminalSymbol`. Apply [`val`](@ref) to a symbol to recover
+its underlying value.
+"""
 rhs(p::Production) = p.rhs
+
+"""
+    weight(p::Production)
+
+Return the semiring weight of production `p`.
+"""
 weight(p::Production) = p.weight
 
 function compose(a::Production{N,T,E}, b::Production{N,T,E}) where {N,T,E}
@@ -79,6 +106,33 @@ end
 
 abstract type AbstractGrammar{N, T, E} end
 
+"""
+    ContextFreeGrammar{N, T, E}
+
+A weighted context-free grammar with nonterminals of type `N`, terminals of type `T`,
+and production weights of semiring element type `E`. Its fields are the
+sets of [`nonterminals`](@ref) and [`terminals`](@ref), the vector of
+[`productions`](@ref), and the [`start`](@ref) symbol.
+
+# Constructors
+
+    ContextFreeGrammar(productions, start; semiring = BooleanSemiring())
+    ContextFreeGrammar(nonterminals, terminals, productions, start; semiring = BooleanSemiring())
+
+Build a grammar from a collection of `productions`. Each production is a tuple
+`(lhs, rhs)`—or `(lhs, rhs, weight)` for a non-Boolean `semiring` where `lhs` is a
+nonterminal and `rhs` is a vector of symbols. In the two-argument form the terminal and nonterminal alphabets are
+inferred from the productions; in the four-argument form they are given explicitly.
+
+# Examples
+
+```julia
+G = ContextFreeGrammar(
+    [(:S, [:NP, :VP]), (:NP, ["fish"]), (:VP, ["swim"])],
+    :S,
+)
+```
+"""
 struct ContextFreeGrammar{N, T, E} <: AbstractGrammar{N, T, E}
     nonterminals::Set{N}
     terminals::Set{T}
@@ -114,9 +168,33 @@ function ContextFreeGrammar(nonterminals::AbstractVector{N}, terminals::Abstract
 end
 
 # Convenience accessors
+
+"""
+    terminals(G::AbstractGrammar)
+
+Return the set of terminal symbols of grammar `G`.
+"""
 terminals(G::AbstractGrammar) = G.terminals
+
+"""
+    nonterminals(G::AbstractGrammar)
+
+Return the set of nonterminal symbols of grammar `G`.
+"""
 nonterminals(G::AbstractGrammar) = G.nonterminals
+
+"""
+    productions(G::AbstractGrammar)
+
+Return the vector of [`Production`](@ref)s of grammar `G`.
+"""
 productions(G::AbstractGrammar) = G.productions
+
+"""
+    start(G::AbstractGrammar)
+
+Return the start symbol of grammar `G`.
+"""
 start(G::AbstractGrammar) = G.start
 semiring(::AbstractGrammar{N,T,E}) where {N,T,E} = semiring(E)
 
@@ -170,6 +248,14 @@ function unit_production_closure(P::AbstractVector{Production{N, T, E}}) where {
     return A, symbols
 end
 
+"""
+    generating_symbols(cfg::AbstractGrammar)
+
+Return the set of *generating* symbols of `cfg`: the terminals together with every
+nonterminal that can derive a string of terminals. Computed by least-fixed-point
+iteration, marking a nonterminal as generating once some production expands it into
+already-generating symbols. Used by [`remove_useless_symbols`](@ref).
+"""
 function generating_symbols(cfg::AbstractGrammar)
     Σ = copy(terminals(cfg))
     R = productions(cfg)
@@ -184,6 +270,14 @@ function generating_symbols(cfg::AbstractGrammar)
     return new_generating
 end
 
+"""
+    reachable_symbols(cfg::AbstractGrammar)
+
+Return the set of symbols *reachable* from the start symbol of `cfg`: those that
+appear in some sentential form derivable from `start(cfg)`. Computed by least-fixed-point
+iteration, starting from the start symbol and following productions whose left-hand
+side is already reachable. Used by [`remove_useless_symbols`](@ref).
+"""
 function reachable_symbols(cfg::AbstractGrammar)
     S = start(cfg)
     old_reachable = Set{eltype(S)}()
@@ -202,6 +296,16 @@ function reachable_symbols(cfg::AbstractGrammar)
     return new_reachable
 end
 
+"""
+    remove_useless_symbols(cfg::AbstractGrammar)
+
+Return a new [`ContextFreeGrammar`](@ref) equivalent to `cfg` with all useless symbols
+removed. A symbol is useful only if it is both [`generating`](@ref generating_symbols)
+and [`reachable`](@ref reachable_symbols). Non-generating symbols (and the productions
+mentioning them) are dropped first, then unreachable symbols are dropped from the
+result; the order matters, so that reachability is assessed on the already-pruned
+grammar.
+"""
 function remove_useless_symbols(cfg::AbstractGrammar)
     generating = generating_symbols(cfg)
     R′ = filter(r -> lhs(r) ∈ generating && all(s -> s isa TerminalSymbol || val(s) ∈ generating, rhs(r)), productions(cfg))

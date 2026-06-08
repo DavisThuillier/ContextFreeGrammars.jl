@@ -1,3 +1,28 @@
+"""
+    ChomskyNormalFormContextFreeGrammar{N,T,E}
+
+A context-free grammar in Chomsky normal form: every production is either
+``A ⇒ a`` (a single terminal) or ``A ⇒ B C`` (two nonterminals). This is the form
+required by [`cyk`](@ref). It shares the field layout and accessors of
+[`ContextFreeGrammar`](@ref).
+
+# Constructors
+
+    ChomskyNormalFormContextFreeGrammar(cfg::ContextFreeGrammar)
+    ChomskyNormalFormContextFreeGrammar(productions, start; semiring = BooleanSemiring())
+
+Convert an existing grammar (or one built inline from `productions` and `start`) to
+Chomsky normal form, preserving the weight of every derivation. The conversion follows
+Hopcroft & Ullman, *Introduction to Automata Theory, Languages, and Computation*
+(1979), pp. 92–94: unit productions are eliminated (see [`remove_unit_productions`](@ref)),
+useless symbols are removed (see [`remove_useless_symbols`](@ref)), terminals occurring
+in long bodies are abstracted into fresh nonterminals, and remaining long bodies are
+binarized.
+
+Conversion mints fresh nonterminals of type `N`; methods are provided for
+`N === Symbol` and `N === String`. To convert grammars over another nonterminal type,
+define `fresh_nonterminal(::Type{N}, V, Σ; prefix)`.
+"""
 struct ChomskyNormalFormContextFreeGrammar{N,T,E<:AbstractSemiringElement} <: AbstractGrammar{N,T,E}
     nonterminals::Set{N}
     terminals::Set{T}
@@ -22,6 +47,17 @@ ChomskyNormalFormContextFreeGrammar(productions::AbstractVector, start; semiring
 # Hopcroft, J.E. and Ullman, J.D., "Introduction to Automata Theory,
 # Languages, and Computation," pp.92-94 Addison-Wesley, 1979.
 
+"""
+    remove_unit_productions(productions)
+
+Return a new vector of [`Production`](@ref)s equivalent to `productions` but free of
+unit productions (rules of the form ``A ⇒ B`` with a single nonterminal body). The
+non-unit productions are kept, and for every pair of nonterminals connected through a
+chain of unit productions the corresponding non-unit productions are re-attached with
+the chain's accumulated weight. The chain weights are obtained from the transitive
+closure of the unit-production graph, computed over the grammar's semiring (using its
+`star` operation), so cycles of unit productions are handled correctly.
+"""
 function remove_unit_productions(productions::AbstractVector{Production{N,T,E}}) where {N,T,E<:AbstractSemiringElement}
     is_unit = is_unit_production.(productions)
     nonunit_productions = productions[.!is_unit]
@@ -156,6 +192,15 @@ function binarize_productions(cfg::ContextFreeGrammar{N,T,E}) where {N,T,E<:Abst
     return ContextFreeGrammar(V, copy(Σ), R′, start(cfg))
 end
 
+"""
+    in_chomsky_normal_form(production::Production)
+    in_chomsky_normal_form(cfg::AbstractGrammar)
+
+Test whether a single `production` is in Chomsky normal form—i.e. its body is either
+one terminal (``A ⇒ a``) or two nonterminals (``A ⇒ B C``)—or whether every production
+of a grammar `cfg` is. A [`ChomskyNormalFormContextFreeGrammar`](@ref) satisfies this
+by construction.
+"""
 function in_chomsky_normal_form(production::Production)
     rhs = production.rhs
     cond1 = length(rhs) == 1 && isa(rhs[1], TerminalSymbol)

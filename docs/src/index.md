@@ -9,6 +9,6 @@ Documentation for [ContextFreeGrammars](https://github.com/DavisThuillier/Contex
 ```@index
 ```
 
-```@autodocs
+<!-- ```@autodocs
 Modules = [ContextFreeGrammars]
-```
+``` -->
